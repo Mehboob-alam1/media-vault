@@ -151,17 +151,20 @@ class ShelfViewModel(application: Application) : AndroidViewModel(application) {
             val batch = withContext(Dispatchers.IO) {
                 LocalFileReader.describeAll(getApplication(), uris, sourceHint)
             }
-            if (batch.unreadable > 0) {
-                report("Couldn't read ${batch.unreadable} file${if (batch.unreadable == 1) "" else "s"}.")
-            }
             val keep = batch.files.filter { it.category != FileKind.OTHER }
             val skipped = batch.files.size - keep.size
-            if (skipped > 0) {
-                report(
-                    "Skipped $skipped unsupported file${if (skipped == 1) "" else "s"}. " +
-                        "Shelf keeps images, PDFs, Office files, and text.",
-                )
+            val notes = buildList {
+                if (batch.unreadable > 0) {
+                    add("Couldn't read ${batch.unreadable} file${if (batch.unreadable == 1) "" else "s"}.")
+                }
+                if (skipped > 0) {
+                    add(
+                        "Skipped $skipped unsupported file${if (skipped == 1) "" else "s"}. " +
+                            "Shelf keeps images, PDFs, Office files, and text.",
+                    )
+                }
             }
+            if (notes.isNotEmpty()) report(notes.joinToString(" "))
             if (keep.isEmpty()) return@launch
             _state.update { state ->
                 val known = state.staged.map { it.uri }.toSet()
