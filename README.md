@@ -18,7 +18,7 @@ Shelf does not have its own server. Firebase is read from `app/google-services.j
 
 ## Firebase
 
-`app/google-services.json` already points at the Firebase project. The Android package inside that file for this app is `com.shelf.archive`. Anonymous sign-in, Realtime Database, and Storage need to stay enabled, with the rules in `firebase/database.rules.json` and `firebase/storage.rules` published.
+`app/google-services.json` already points at the Firebase project. The Android package inside that file for this app is `com.shelf.archive`. In Authentication, Anonymous must be enabled, and under Settings **Enable create (sign-up)** must be on. Realtime Database and Storage stay enabled, with the rules in `firebase/database.rules.json` and `firebase/storage.rules` published.
 
 Every phone that installs this app shares one library. Shelf signs in anonymously so Storage and Database rules can require `auth != null`.
 

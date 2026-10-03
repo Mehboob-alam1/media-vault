@@ -151,6 +151,9 @@ class ArchiveLogicTest {
     fun explainsCommonFirebaseFailures() {
         val auth = explainFirebaseFailure("The identity provider is disabled for this project. OPERATION_NOT_ALLOWED")
         assertTrue(auth.contains("Anonymous"))
+        val admin = explainFirebaseFailure("This operation is restricted to administrators only.")
+        assertTrue(admin.contains("Anonymous"))
+        assertTrue(admin.contains("Enable create"))
         val rules = explainFirebaseFailure("Permission denied", FirebaseFailureHint.UNAUTHORIZED)
         assertTrue(rules.contains("rules"))
         val network = explainFirebaseFailure("Unable to resolve host firebaseio.com")

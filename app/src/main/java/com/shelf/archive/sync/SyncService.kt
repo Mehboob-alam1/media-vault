@@ -13,7 +13,9 @@ import com.shelf.archive.data.BundledFirebase
 import com.shelf.archive.data.DeviceScanner
 import com.shelf.archive.data.FirebaseVault
 import com.shelf.archive.data.UploadLedger
+import com.shelf.archive.data.explainFirebase
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -22,8 +24,11 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 class SyncService : Service() {
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
+    private val scope = CoroutineScope(
+        SupervisorJob() + Dispatchers.Main.immediate + CoroutineExceptionHandler { _, _ -> },
+    )
     private var running = false
+    private var keepNotice = false
 
     override fun onBind(intent: Intent?): IBinder? = null
 
@@ -34,9 +39,18 @@ class SyncService : Service() {
             scope.launch {
                 try {
                     withContext(Dispatchers.IO) { sync() }
+                } catch (error: CancellationException) {
+                    throw error
+                } catch (error: Exception) {
+                    keepNotice = true
+                    withContext(Dispatchers.Main) { showFinished(error.explainFirebase()) }
                 } finally {
                     running = false
-                    stopForeground(STOP_FOREGROUND_REMOVE)
+                    if (keepNotice) {
+                        stopForeground(STOP_FOREGROUND_DETACH)
+                    } else {
+                        stopForeground(STOP_FOREGROUND_REMOVE)
+                    }
                     stopSelf()
                 }
             }
@@ -57,7 +71,15 @@ class SyncService : Service() {
             return
         }
         val vault = FirebaseVault(this)
-        vault.connect(config)
+        try {
+            vault.connect(config)
+        } catch (error: CancellationException) {
+            throw error
+        } catch (error: Exception) {
+            keepNotice = true
+            withContext(Dispatchers.Main) { showFinished(error.explainFirebase()) }
+            return
+        }
         val ledger = UploadLedger(this)
         val discovered = DeviceScanner.scan(this)
         var done = 0
@@ -104,8 +126,29 @@ class SyncService : Service() {
             .build()
     }
 
+    private fun showFinished(text: String) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val manager = getSystemService(NotificationManager::class.java)
+            val channel = NotificationChannel(
+                ALERT_CHANNEL_ID,
+                "Sync problems",
+                NotificationManager.IMPORTANCE_DEFAULT,
+            )
+            manager.createNotificationChannel(channel)
+        }
+        val notification = NotificationCompat.Builder(this, ALERT_CHANNEL_ID)
+            .setSmallIcon(android.R.drawable.stat_sys_upload)
+            .setContentTitle("Shelf")
+            .setContentText(text)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(text))
+            .setAutoCancel(true)
+            .build()
+        getSystemService(NotificationManager::class.java).notify(NOTIFICATION_ID, notification)
+    }
+
     private companion object {
         const val CHANNEL_ID = "shelf.sync"
+        const val ALERT_CHANNEL_ID = "shelf.sync.alert"
         const val NOTIFICATION_ID = 41
     }
 }

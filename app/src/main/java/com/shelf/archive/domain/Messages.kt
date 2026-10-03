@@ -24,7 +24,7 @@ fun explainFirebaseFailure(
         "not authorized" in text ||
         "permission_denied" in text
     ) {
-        return "Firebase refused this request. Enable Anonymous sign-in, then publish the database and storage rules from this screen."
+        return "Firebase refused this request. Enable Anonymous sign-in, then publish database and storage rules that allow signed-in users."
     }
     if (
         hint == FirebaseFailureHint.BUCKET_MISSING ||
@@ -42,10 +42,11 @@ fun explainFirebaseFailure(
     if (
         "admin_only_operation" in text ||
         "operation_not_allowed" in text ||
+        "restricted to administrators" in text ||
         "sign-in provider is disabled" in text ||
         "provider is disabled" in text
     ) {
-        return "Anonymous sign-in is off. In Firebase, open Authentication, then Sign-in method, and enable Anonymous."
+        return "Anonymous sign-in is blocked. In Firebase Authentication, enable Anonymous. Then open Settings and turn on Enable create (sign-up)."
     }
     if ("api key not valid" in text || "api_key_invalid" in text || "invalid api key" in text) {
         return "That API key was rejected. Import google-services.json again, and allow this Android package on the key."
