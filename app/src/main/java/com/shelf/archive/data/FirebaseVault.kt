@@ -214,11 +214,18 @@ class FirebaseVault(context: Context) {
     private fun copyToCache(uri: Uri, name: String): File {
         val directory = File(appContext.cacheDir, "uploads").apply { mkdirs() }
         val destination = File(directory, "${UUID.randomUUID()}-${safeStorageName(name)}")
-        appContext.contentResolver.openInputStream(uri).use { input ->
-            if (input == null) error("Couldn't read $name.")
+        openStream(uri, name).use { input ->
             destination.outputStream().use { output -> input.copyTo(output) }
         }
         return destination
+    }
+
+    private fun openStream(uri: Uri, name: String): java.io.InputStream {
+        if (uri.scheme == "file") {
+            val path = uri.path ?: error("Couldn't read $name.")
+            return File(path).inputStream()
+        }
+        return appContext.contentResolver.openInputStream(uri) ?: error("Couldn't read $name.")
     }
 
     private fun deviceLabel(): String {

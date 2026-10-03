@@ -35,6 +35,15 @@ class ArchiveLogicTest {
     }
 
     @Test
+    fun fingerprintStaysStableForTheSameFile() {
+        val first = uploadFingerprint("/storage/emulated/0/Download/scan.pdf", 1200, 10, "scan.pdf")
+        val again = uploadFingerprint("  /storage/emulated/0/Download/scan.pdf", 1200, 10, "scan.pdf")
+        assertEquals(first, again)
+        val edited = uploadFingerprint("/storage/emulated/0/Download/scan.pdf", 1400, 10, "scan.pdf")
+        assertTrue(first != edited)
+    }
+
+    @Test
     fun sanitizesStorageNames() {
         assertEquals("secret.txt", safeStorageName("../secret.txt"))
         assertEquals("holiday photo.jpg", safeStorageName("holiday photo.jpg"))
