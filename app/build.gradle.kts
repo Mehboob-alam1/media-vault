@@ -3,6 +3,8 @@ plugins {
     alias(libs.plugins.compose.compiler)
 }
 
+val firebaseAssetsDir = layout.buildDirectory.dir("generated/firebaseAssets").get().asFile
+
 android {
     namespace = "com.shelf.archive"
     compileSdk = 37
@@ -46,6 +48,17 @@ android {
     testOptions {
         unitTests.isReturnDefaultValues = true
     }
+
+    sourceSets.getByName("main").assets.srcDir(firebaseAssetsDir)
+}
+
+tasks.register<Copy>("copyGoogleServices") {
+    from(layout.projectDirectory.file("google-services.json"))
+    into(firebaseAssetsDir)
+}
+
+tasks.named("preBuild").configure {
+    dependsOn("copyGoogleServices")
 }
 
 dependencies {

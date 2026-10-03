@@ -1,5 +1,6 @@
 package com.shelf.archive.domain
 
+import java.io.File
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -32,6 +33,16 @@ class ArchiveLogicTest {
         assertEquals(FileKind.TEXT, FileKinds.classify("text/csv", "table.csv", "files"))
         assertEquals(FileKind.OTHER, FileKinds.classify("application/zip", "archive.zip", "files"))
         assertEquals(FileKind.PDF, FileKinds.classify("application/pdf", "wa.pdf", "whatsapp"))
+    }
+
+    @Test
+    fun bundledGoogleServicesMatchesThisApp() {
+        val file = File("google-services.json")
+        assertTrue(file.exists())
+        val parsed = GoogleServicesParser.parse(file.readText(), "com.shelf.archive")
+        assertEquals("com.shelf.archive", parsed.packageName)
+        assertNull(parsed.warning)
+        assertNull(parsed.config.normalized().validationError())
     }
 
     @Test

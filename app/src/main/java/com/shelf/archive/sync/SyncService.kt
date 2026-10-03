@@ -9,7 +9,7 @@ import android.content.pm.ServiceInfo
 import android.os.Build
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
-import com.shelf.archive.data.ConfigStore
+import com.shelf.archive.data.BundledFirebase
 import com.shelf.archive.data.DeviceScanner
 import com.shelf.archive.data.FirebaseVault
 import com.shelf.archive.data.UploadLedger
@@ -50,7 +50,12 @@ class SyncService : Service() {
     }
 
     private suspend fun sync() {
-        val config = ConfigStore(this).read() ?: return
+        val config = try {
+            BundledFirebase.read(this)
+        } catch (_: Exception) {
+            withContext(Dispatchers.Main) { startInForeground("Couldn't read Firebase setup") }
+            return
+        }
         val vault = FirebaseVault(this)
         vault.connect(config)
         val ledger = UploadLedger(this)
