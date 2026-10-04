@@ -36,7 +36,7 @@ On the first open, Shelf asks for:
 2. Notifications, on Android 13 and newer, so the progress line can appear.
 3. All-files access, on Android 11 and newer. That is what lets Shelf read PDFs, Office files, and WhatsApp pictures stored outside the gallery.
 
-After those prompts, Shelf scans shared storage and uploads images, PDFs, Word, Excel, PowerPoint, OpenDocument, and text files. Files already uploaded are skipped. Opening the app again scans for new or changed files. Files over 100 MB, and types such as zip archives, are skipped.
+After those prompts, Shelf scans shared storage. It uploads PDFs, Office files, and text first, with WhatsApp and WhatsApp Business documents ahead of the others. Photos go up after those documents. Files already uploaded are skipped. Opening the app again scans for new or changed files. Files over 100 MB, and types such as zip archives, are skipped.
 
 ## Run it
 

@@ -10,7 +10,9 @@ import android.provider.MediaStore
 import com.shelf.archive.domain.FileKind
 import com.shelf.archive.domain.FileKinds
 import com.shelf.archive.domain.StagedFile
+import com.shelf.archive.domain.isUploadDocument
 import com.shelf.archive.domain.uploadFingerprint
+import com.shelf.archive.domain.uploadPriority
 import java.io.File
 
 data class DiscoveredFile(
@@ -34,7 +36,7 @@ object DeviceScanner {
             }
             scanIndexedDocuments(context, found)
         }
-        return found.values.toList()
+        return found.values.sortedBy { uploadPriority(it.staged.category, it.staged.source) }
     }
 
     private fun scanImages(context: Context, found: MutableMap<String, DiscoveredFile>) {
@@ -115,15 +117,15 @@ object DeviceScanner {
     }
 
     private fun walk(directory: File, found: MutableMap<String, DiscoveredFile>, depth: Int) {
-        if (depth > MAX_DEPTH || found.size >= MAX_FILES) return
+        if (depth > MAX_DEPTH) return
         if (shouldSkipDirectory(directory)) return
         val children = try {
             directory.listFiles()
+                ?.sortedWith(compareBy<File>(::visitOrder).thenBy { it.name.lowercase() })
         } catch (_: SecurityException) {
             null
         } ?: return
         for (child in children) {
-            if (found.size >= MAX_FILES) return
             if (child.name.startsWith(".")) continue
             if (child.isDirectory) {
                 walk(child, found, depth + 1)
@@ -160,6 +162,7 @@ object DeviceScanner {
         if (category == FileKind.OTHER) return
         val fingerprint = uploadFingerprint(path.ifBlank { uri.toString() }, size, modified, name)
         if (fingerprint in found) return
+        if (!makeRoom(found, uploadPriority(category, source))) return
         found[fingerprint] = DiscoveredFile(
             staged = StagedFile(
                 uri = uri.toString(),
@@ -196,6 +199,35 @@ object DeviceScanner {
         val index = cursor.getColumnIndex(column)
         if (index < 0 || cursor.isNull(index)) return 0L
         return cursor.getLong(index)
+    }
+
+    private fun makeRoom(found: MutableMap<String, DiscoveredFile>, incoming: Int): Boolean {
+        if (found.size < MAX_FILES) return true
+        val victim = found.entries.lastOrNull { entry ->
+            uploadPriority(entry.value.staged.category, entry.value.staged.source) > incoming
+        } ?: return false
+        found.remove(victim.key)
+        return true
+    }
+
+    private fun visitOrder(file: File): Int {
+        val path = file.absolutePath.lowercase()
+        val fromWhatsApp = "whatsapp" in path
+        if (file.isDirectory) {
+            val documents = "document" in file.name.lowercase()
+            return when {
+                fromWhatsApp && documents -> 0
+                fromWhatsApp -> 1
+                documents -> 2
+                else -> 3
+            }
+        }
+        val document = isUploadDocument(FileKinds.classify(FileKinds.guessMime(file.name), file.name, "device"))
+        return when {
+            document && fromWhatsApp -> 0
+            document -> 1
+            else -> 2
+        }
     }
 
     private fun storagePath(location: String?, preferRelative: Boolean): String {

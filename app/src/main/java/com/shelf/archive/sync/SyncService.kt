@@ -14,6 +14,7 @@ import com.shelf.archive.data.DeviceScanner
 import com.shelf.archive.data.FirebaseVault
 import com.shelf.archive.data.UploadLedger
 import com.shelf.archive.data.explainFirebase
+import com.shelf.archive.domain.isUploadDocument
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
@@ -97,7 +98,8 @@ class SyncService : Service() {
                 // Keep going so one bad file does not stop the rest.
             }
             done++
-            val note = "Saving files ($done of ${discovered.size})"
+            val kind = if (isUploadDocument(item.staged.category)) "documents" else "photos"
+            val note = "Saving $kind ($done of ${discovered.size})"
             withContext(Dispatchers.Main) { startInForeground(note) }
         }
     }

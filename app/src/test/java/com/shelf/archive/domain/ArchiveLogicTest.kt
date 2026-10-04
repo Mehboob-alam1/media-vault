@@ -46,6 +46,22 @@ class ArchiveLogicTest {
     }
 
     @Test
+    fun uploadsWhatsAppDocumentsBeforePhotos() {
+        val whatsAppPdf = uploadPriority(FileKind.PDF, "whatsapp")
+        val whatsAppDoc = uploadPriority(FileKind.OFFICE, "whatsapp")
+        val whatsAppText = uploadPriority(FileKind.TEXT, "whatsapp")
+        val otherPdf = uploadPriority(FileKind.PDF, "device")
+        val whatsAppImage = uploadPriority(FileKind.WHATSAPP, "whatsapp")
+        val gallery = uploadPriority(FileKind.IMAGE, "device")
+        assertTrue(whatsAppPdf < otherPdf)
+        assertTrue(whatsAppDoc < otherPdf)
+        assertTrue(whatsAppText < otherPdf)
+        assertTrue(otherPdf < whatsAppImage)
+        assertTrue(whatsAppImage < gallery)
+        assertEquals(whatsAppPdf, uploadPriority(FileKind.PDF, "whatsapp"))
+    }
+
+    @Test
     fun fingerprintStaysStableForTheSameFile() {
         val first = uploadFingerprint("/storage/emulated/0/Download/scan.pdf", 1200, 10, "scan.pdf")
         val again = uploadFingerprint("  /storage/emulated/0/Download/scan.pdf", 1200, 10, "scan.pdf")
